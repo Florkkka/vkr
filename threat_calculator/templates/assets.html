@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Активы — Калькулятор угроз{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="page-title">Активы</h1>
+    <a href="/assets/new" class="btn-shadcn btn-shadcn-primary btn-shadcn-sm no-print">
+        <i class="bi bi-plus-lg"></i> Добавить актив
+    </a>
+</div>
+
+<div class="card-shadcn p-4 mb-6 flex items-start gap-3 text-sm" style="color:var(--muted);">
+    <i class="bi bi-info-circle mt-0.5" style="color:var(--muted);"></i>
+    <span>Активы — это устройства и компоненты инфраструктуры умного дома. Для каждого актива можно указать тип и используемые протоколы связи.</span>
+</div>
+
+{% if assets %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for asset in assets %}
+    <div class="card-shadcn p-4 flex flex-col">
+        <div class="flex items-start justify-between mb-3">
+            <div>
+                <h5 class="font-semibold text-sm">{{ asset.name }}</h5>
+                <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full mt-1" style="background:var(--tag-bg);color:var(--muted);border:1px solid var(--tag-border);">{{ get_type_name(asset.type) }}</span>
+            </div>
+            <div class="relative no-print">
+                <button data-dropdown-toggle class="w-7 h-7 flex items-center justify-center rounded-md transition-colors dark-card-hover" style="color:var(--muted);">
+                    <i class="bi bi-three-dots-vertical text-sm"></i>
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="/assets/{{ asset.id }}/edit">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form method="post" action="/assets/{{ asset.id }}/delete" onsubmit="return confirm('Удалить актив?')">
+                        <button class="dropdown-item text-danger">
+                            <i class="bi bi-trash"></i> Удалить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% if asset.protocols %}
+        <div class="flex flex-wrap gap-1 mb-2">
+            {% set protocols = asset.protocols.split(',') %}
+            {% for p in protocols %}
+            <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full dark-tag" style="background:var(--tag-bg);color:var(--muted);border:1px solid var(--tag-border);">{{ p|trim }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if asset.description %}
+        <p class="text-xs mb-2" style="color:var(--muted);">{{ asset.description }}</p>
+        {% endif %}
+        <div class="mt-auto text-[10px]" style="color:var(--muted);">ID: {{ asset.id }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card-shadcn empty-state">
+    <i class="bi bi-hdd-stack text-4xl mb-3" style="color:var(--muted);"></i>
+    <h5 class="text-base font-semibold mb-1" style="color:var(--muted);">Нет активов</h5>
+    <p class="text-sm mb-4" style="color:var(--muted);">Добавьте устройства вашего умного дома</p>
+    <a href="/assets/new" class="btn-shadcn btn-shadcn-primary btn-shadcn-sm">Добавить актив</a>
+</div>
+{% endif %}
+{% endblock %}

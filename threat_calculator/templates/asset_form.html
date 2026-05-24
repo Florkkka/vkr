@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Редактировать' if asset else 'Новый' }} актив — Калькулятор угроз{% endblock %}
+
+{% block content %}
+<a href="/assets" class="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800 mb-4 no-print">
+    <i class="bi bi-arrow-left"></i> Назад к активам
+</a>
+<h1 class="page-title mb-6">{{ 'Редактировать' if asset else 'Новый' }} актив</h1>
+
+<div class="card-shadcn p-6" style="max-width:600px;">
+    <form method="post" action="{% if asset %}/assets/{{ asset.id }}/edit{% else %}/assets/new{% endif %}">
+        <div class="mb-4">
+            <label class="label-shadcn">Название</label>
+            <input type="text" name="name" class="input-shadcn" value="{{ asset.name if asset else '' }}" required>
+        </div>
+
+        <div class="mb-4">
+            <label class="label-shadcn">Тип устройства</label>
+            <select name="type" class="input-shadcn" required>
+                <option value="">— выберите тип —</option>
+                {% for at in asset_types %}
+                <option value="{{ at.id }}" {% if asset and asset.type == at.id %}selected{% endif %}>{{ at.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="label-shadcn">Протоколы связи</label>
+            <div class="grid grid-cols-2 gap-2">
+                {% for p in protocols %}
+                <label class="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer">
+                    <input class="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900" type="checkbox" name="protocols" value="{{ p }}" id="proto_{{ loop.index }}"
+                        {% if asset and p in (asset.protocols or '').split(',') %}checked{% endif %}>
+                    <span>{{ p }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="label-shadcn">Описание</label>
+            <textarea name="description" class="input-shadcn" rows="3">{{ asset.description if asset else '' }}</textarea>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button type="submit" class="btn-shadcn btn-shadcn-primary">
+                <i class="bi bi-check-lg"></i> {{ 'Сохранить' if asset else 'Создать' }}
+            </button>
+            <a href="/assets" class="btn-shadcn">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    const checkboxes = this.querySelectorAll('input[name="protocols"]:checked');
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'protocols';
+    hidden.value = Array.from(checkboxes).map(cb => cb.value).join(',');
+    checkboxes.forEach(cb => cb.removeAttribute('name'));
+    this.appendChild(hidden);
+});
+</script>
+{% endblock %}

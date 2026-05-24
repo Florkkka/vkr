@@ -1,0 +1,155 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ 'Редактировать' if threat else 'Новая' }} угроза — Калькулятор угроз{% endblock %}
+
+{% block content %}
+<a href="/threats" class="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800 mb-4 no-print">
+    <i class="bi bi-arrow-left"></i> Назад к угрозам
+</a>
+<h1 class="page-title mb-6">{{ 'Редактировать' if threat else 'Новая' }} угроза</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+        <div class="card-shadcn p-6">
+            {% if not threat %}
+            <div class="mb-6 p-4 rounded-lg bg-zinc-50 border border-zinc-200 no-print">
+                <label class="label-shadcn">Быстрый выбор из типовых угроз</label>
+                <select id="templateSelect" class="input-shadcn" onchange="fillFromTemplate(this)">
+                    <option value="">— выберите шаблон —</option>
+                    {% for t in threat_templates %}
+                    <option value="{{ loop.index0 }}"
+                        data-stride="{{ t.stride }}"
+                        data-desc="{{ t.description }}"
+                        data-p="{{ t.default_p }}"
+                        data-i="{{ t.default_i }}">
+                        {{ t.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% if threat %}/threats/{{ threat.id }}/edit{% else %}/threats/new{% endif %}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="label-shadcn">Название угрозы</label>
+                        <input type="text" name="name" id="inputName" class="input-shadcn" value="{{ threat.name if threat else '' }}" required>
+                    </div>
+
+                    <div>
+                        <label class="label-shadcn">Категория STRIDE</label>
+                        <select name="stride" id="inputStride" class="input-shadcn" required>
+                            <option value="">— выберите —</option>
+                            {% for s in stride_list %}
+                            <option value="{{ s.value }}" {% if threat and threat.stride == s.value %}selected{% endif %}>{{ s.value }} — {{ s.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="label-shadcn">Связанный актив</label>
+                        <select name="asset_id" class="input-shadcn">
+                            <option value="0">— без актива —</option>
+                            {% for a in assets %}
+                            <option value="{{ a.id }}" {% if threat and threat.asset_id == a.id %}selected{% endif %}>{{ a.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="label-shadcn">Описание угрозы</label>
+                        <textarea name="description" id="inputDesc" class="input-shadcn" rows="2">{{ threat.description if threat else '' }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="label-shadcn">Вероятность (P)</label>
+                        <select name="probability" id="inputP" class="input-shadcn" required>
+                            <option value="1" {% if threat and threat.probability == 1 %}selected{% endif %}>1 — Низкая</option>
+                            <option value="2" {% if threat and threat.probability == 2 %}selected{% endif %}>2 — Средняя</option>
+                            <option value="3" {% if threat and threat.probability == 3 %}selected{% endif %}>3 — Высокая</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="label-shadcn">Последствия (I)</label>
+                        <select name="impact" id="inputI" class="input-shadcn" required>
+                            <option value="1" {% if threat and threat.impact == 1 %}selected{% endif %}>1 — Низкие</option>
+                            <option value="2" {% if threat and threat.impact == 2 %}selected{% endif %}>2 — Средние</option>
+                            <option value="3" {% if threat and threat.impact == 3 %}selected{% endif %}>3 — Высокие</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 flex items-center gap-3">
+                        <button type="submit" class="btn-shadcn btn-shadcn-primary">
+                            <i class="bi bi-check-lg"></i> {{ 'Сохранить' if threat else 'Создать' }}
+                        </button>
+                        <a href="/threats" class="btn-shadcn">Отмена</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="space-y-4 no-print">
+        <div class="card-shadcn p-4">
+            <h5 class="font-semibold text-sm mb-3 flex items-center gap-2">
+                <i class="bi bi-book"></i> Категории STRIDE
+            </h5>
+            <div class="space-y-2">
+                {% set stride_info = {
+                    "S": {"name": "Spoofing", "desc": "Подмена"},
+                    "T": {"name": "Tampering", "desc": "Изменение"},
+                    "R": {"name": "Repudiation", "desc": "Отказ"},
+                    "I": {"name": "Information Disclosure", "desc": "Раскрытие"},
+                    "D": {"name": "Denial of Service", "desc": "Отказ в обслуживании"},
+                    "E": {"name": "Elevation of Privilege", "desc": "Повышение привилегий"},
+                } %}
+                {% for code, info in stride_info.items() %}
+                {% set colors = {"S": "#6366f1", "T": "#f59e0b", "R": "#8b5cf6", "I": "#06b6d4", "D": "#ef4444", "E": "#ec4899"} %}
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="badge-stride" style="background:{{ colors[code] }};">{{ code }}</span>
+                    <span class="font-medium text-zinc-700">{{ info.name }}</span>
+                    <span class="text-zinc-400">— {{ info.desc }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card-shadcn p-4">
+            <h5 class="font-semibold text-sm mb-3 flex items-center gap-2">
+                <i class="bi bi-question-circle"></i> Шкала оценки
+            </h5>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <div class="font-medium text-zinc-700 mb-1">Вероятность (P)</div>
+                    <div class="text-zinc-500 space-y-1">
+                        <div>1 — Низкая: маловероятно, нужны особые условия</div>
+                        <div>2 — Средняя: возможна при стандартных условиях</div>
+                        <div>3 — Высокая: легко реализуема</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="font-medium text-zinc-700 mb-1">Последствия (I)</div>
+                    <div class="text-zinc-500 space-y-1">
+                        <div>1 — Низкие: незначительный ущерб</div>
+                        <div>2 — Средние: умеренный ущерб</div>
+                        <div>3 — Высокие: критический ущерб</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fillFromTemplate(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    document.getElementById('inputName').value = opt.text;
+    document.getElementById('inputStride').value = opt.dataset.stride;
+    document.getElementById('inputDesc').value = opt.dataset.desc;
+    document.getElementById('inputP').value = opt.dataset.p;
+    document.getElementById('inputI').value = opt.dataset.i;
+}</script>
+{% endblock %}

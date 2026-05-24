@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Калькулятор угроз{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    borderRadius: { DEFAULT: '0.5rem' },
+                    colors: {
+                        border: 'hsl(240 5.9% 90%)',
+                        input: 'hsl(240 5.9% 90%)',
+                        ring: 'hsl(240 5.9% 10%)',
+                        background: 'hsl(0 0% 100%)',
+                        foreground: 'hsl(240 10% 3.9%)',
+                        primary: { DEFAULT: 'hsl(240 5.9% 10%)', foreground: 'hsl(0 0% 98%)' },
+                        secondary: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 5.9% 10%)' },
+                        muted: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 3.8% 46.1%)' },
+                        accent: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 5.9% 10%)' },
+                        destructive: { DEFAULT: 'hsl(0 84.2% 60.2%)', foreground: 'hsl(0 0% 98%)' },
+                        card: { DEFAULT: 'hsl(0 0% 100%)', foreground: 'hsl(240 10% 3.9%)' },
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        :root { --bg: #fafafa; --fg: #09090b; --card: #fff; --card-border: #e4e4e7; --muted: #71717a; --muted-bg: #f4f4f5; --table-stripe: #fafafa; --tag-bg: #f4f4f5; --tag-border: #e4e4e7; color-scheme: light; }
+        .dark { --bg: #0c0c0e; --fg: #e4e4e7; --card: #18181b; --card-border: #27272a; --muted: #a1a1aa; --muted-bg: #1f1f23; --table-stripe: #1a1a1d; --tag-bg: #1f1f23; --tag-border: #2a2a30; color-scheme: dark; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--fg); transition: background .15s, color .15s; }
+        .sidebar { width: 260px; min-height: 100vh; background: #050812; position: fixed; left: 0; top: 0; z-index: 40; }
+        .main { margin-left: 260px; min-height: 100vh; }
+        .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 10px 16px; margin: 2px 12px; border-radius: 0.5rem; color: #a1a1aa; font-size: 0.875rem; font-weight: 500; transition: all 0.15s; text-decoration: none; border-left: 3px solid transparent; }
+        .sidebar-link:hover { background: rgba(255,255,255,0.06); color: #fafafa; }
+        .sidebar-link.active { background: #1E2645; color: #fff; border-left: 3px solid #3b82f6; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.15); }
+        .sidebar-link i { width: 18px; text-align: center; font-size: 1rem; }
+        .card-shadcn { background: var(--card); border: 1px solid var(--card-border); border-radius: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .btn-shadcn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem; border: 1px solid var(--card-border); background: var(--card); color: var(--fg); cursor: pointer; transition: all 0.15s; text-decoration: none; line-height: 1; }
+        .btn-shadcn:hover { background: color-mix(in srgb, var(--fg) 6%, var(--card)); }
+        .btn-shadcn:active { transform: scale(0.98); }
+        .btn-shadcn-primary { background: #09090b; color: #fafafa; border-color: #09090b; }
+        .btn-shadcn-primary:hover { background: #27272a; }
+        .btn-shadcn-destructive { color: #ef4444; border-color: #fecaca; }
+        .btn-shadcn-destructive:hover { background: #fef2f2; }
+        .btn-shadcn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .btn-shadcn-ghost { border-color: transparent; background: transparent; }
+        .btn-shadcn-ghost:hover { background: color-mix(in srgb, var(--fg) 6%, var(--card)); }
+        .badge-shadcn { display: inline-flex; align-items: center; padding: 2px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; border: 1px solid; }
+        .badge-stride { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; font-size: 0.65rem; font-weight: 700; border-radius: 0.375rem; color: #fff; letter-spacing: 0.3px; }
+        .input-shadcn { width: 100%; padding: 8px 12px; font-size: 0.875rem; border: 1px solid var(--card-border); border-radius: 0.5rem; background: var(--card); outline: none; transition: border-color 0.15s; color: var(--fg); }
+        .input-shadcn:focus { border-color: var(--fg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--fg) 10%, var(--card)); }
+        .label-shadcn { display: block; font-size: 0.8rem; font-weight: 500; color: var(--fg); margin-bottom: 6px; }
+        .table-shadcn { width: 100%; border-collapse: collapse; }
+        .table-shadcn th { text-align: left; padding: 10px 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--card-border); }
+        .table-shadcn td { padding: 10px 12px; font-size: 0.875rem; border-bottom: 1px solid var(--card-border); color: var(--fg); }
+        .table-shadcn tr:last-child td { border-bottom: none; }
+        .dropdown-menu { display: none; position: fixed; z-index: 9999; min-width: 220px; background: var(--card); border: 1px solid var(--card-border); border-radius: 0.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 6px; }
+        .dropdown-menu.open { display: block; }
+        .dropdown-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; font-size: 0.8rem; border-radius: 0.375rem; color: var(--fg); cursor: pointer; background: none; border: none; text-align: left; text-decoration: none; transition: background 0.1s; }
+        .dropdown-item:hover { background: color-mix(in srgb, var(--fg) 6%, var(--card)); }
+        .dropdown-item.text-danger { color: #ef4444; }
+        .dropdown-divider { height: 1px; background: var(--card-border); margin: 4px 0; }
+        .risk-cell { transition: all 0.15s; cursor: default; border-radius: 0.5rem; }
+        .risk-cell:hover { transform: scale(1.05); }
+        tr.mitigated { border-left: 3px solid #22c55e; background: var(--table-stripe) !important; }
+        tr.mitigated td:not(:last-child) { opacity: 0.6; }
+        tr.mitigated td:last-child { opacity: 1; }
+        .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--fg); }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; color: var(--muted); }
+        .dark .dark-text-muted { color: #a1a1aa; }
+        .dark .dark-tag { background: var(--tag-bg); border-color: var(--tag-border); color: var(--fg); }
+        .dark .dark-card-hover:hover { background: color-mix(in srgb, var(--fg) 6%, var(--card)); }
+        .dark .text-zinc-500, .dark .text-zinc-400, .dark .text-zinc-600, .dark .text-zinc-300 { color: var(--muted) !important; }
+        .dark .text-zinc-700, .dark .text-zinc-800 { color: var(--fg) !important; }
+        .dark .bg-zinc-50, .dark .bg-zinc-100, .dark .bg-zinc-200 { background: var(--tag-bg) !important; }
+        .dark .bg-zinc-200\2F 80 { background: color-mix(in srgb, var(--tag-bg) 80%, transparent) !important; }
+        .dark .border-zinc-200 { border-color: var(--tag-border) !important; }
+        @media print {
+            .sidebar, .no-print { display: none !important; }
+            .main { margin-left: 0 !important; }
+            .card-shadcn { box-shadow: none; border: 1px solid #d4d4d8; break-inside: avoid; }
+            @page { margin: 1.5cm; }
+        }
+        .sidebar-overlay { display: none; }
+        .hamburger { display: none; }
+        @media (max-width: 768px) {
+            .hamburger { display: flex; position: fixed; top: 12px; left: 12px; z-index: 50; width: 36px; height: 36px; border-radius: 0.5rem; background: var(--card); border: 1px solid var(--card-border); align-items: center; justify-content: center; cursor: pointer; color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+            .sidebar { transform: translateX(-100%); transition: transform .2s; width: 260px; }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 39; }
+            .sidebar-overlay.open { display: block; }
+            .main { margin-left: 0; padding: 16px !important; padding-top: 60px !important; }
+            .page-title { font-size: 1.25rem; }
+            .grid-cols-3, .lg\:grid-cols-3 { grid-template-columns: 1fr !important; }
+            .lg\:grid-cols-2 { grid-template-columns: 1fr !important; }
+            .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+        }
+    </style>
+    <script>
+        const saved = localStorage.getItem('theme');
+        if (saved === 'dark') document.documentElement.classList.add('dark');
+        else localStorage.setItem('theme', 'light');
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<button class="hamburger" id="hamburgerBtn" aria-label="Меню">
+    <i class="bi bi-list text-lg"></i>
+</button>
+<div class="sidebar flex flex-col" id="sidebar">
+    <a href="/" class="flex items-center gap-3 px-4 py-5 border-b border-zinc-800 no-underline text-inherit hover:opacity-80 transition-opacity">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#1E2645;">
+            <i class="bi bi-shield-check text-white text-lg"></i>
+        </div>
+        <div class="logo-text">
+            <div class="text-base font-extrabold tracking-tight bg-gradient-to-r from-zinc-100 to-zinc-300 bg-clip-text text-transparent">ThreatCalc</div>
+            <div class="text-[11px] font-medium text-zinc-400">Моделирование угроз ИБ</div>
+        </div>
+    </a>
+    <nav class="flex flex-col mt-4">
+        <a class="sidebar-link {% if request.url.path == '/' %}active{% endif %}" href="/">
+            <i class="bi bi-grid-1x2-fill"></i><span>Дашборд</span>
+        </a>
+        <a class="sidebar-link {% if request.url.path.startswith('/asset') %}active{% endif %}" href="/assets">
+            <i class="bi bi-hdd-stack"></i><span>Активы</span>
+        </a>
+        <a class="sidebar-link {% if request.url.path.startswith('/threat') %}active{% endif %}" href="/threats">
+            <i class="bi bi-exclamation-triangle"></i><span>Угрозы</span>
+        </a>
+        <a class="sidebar-link {% if request.url.path == '/report' %}active{% endif %}" href="/report">
+            <i class="bi bi-file-earmark-text"></i><span>Отчёт</span>
+        </a>
+    </nav>
+    <div class="mt-auto px-4 pt-2 pb-0 border-t border-zinc-800">
+        <button id="themeToggle" class="flex items-center gap-3 w-full px-4 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all text-sm">
+            <div class="relative w-10 h-5 rounded-full transition-colors" style="background:#334155;">
+                <div id="toggleThumb" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center transition-all duration-200 shadow-sm" style="transform:translateX(0);">
+                    <i id="toggleIcon" class="bi bi-sun-fill text-[10px] text-zinc-900"></i>
+                </div>
+            </div>
+            <span id="toggleLabel">Светлая тема</span>
+        </button>
+    </div>
+    <div class="px-4 py-3">
+        <div class="text-[10px] text-zinc-600 leading-relaxed">
+            Гунин Артем Андреевич
+        </div>
+    </div>
+</div>
+
+<div class="main p-6 lg:p-8">
+    {% block content %}{% endblock %}
+    <div class="text-center text-xs pt-8 pb-4 mt-8 no-print" style="color:var(--muted);border-top:1px solid var(--card-border);">
+        Калькулятор угроз — анализ рисков ИБ для инфраструктуры умного дома по методологии STRIDE
+    </div>
+</div>
+
+<script>
+document.addEventListener('click', function(e) {
+    const toggle = e.target.closest('[data-dropdown-toggle]');
+    if (toggle) {
+        e.preventDefault();
+        const menu = toggle.nextElementSibling;
+        if (menu && menu.classList.contains('dropdown-menu')) {
+            document.querySelectorAll('.dropdown-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); });
+            menu.classList.toggle('open');
+            if (menu.classList.contains('open')) {
+                const rect = toggle.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const menuHeight = menu.offsetHeight || 200;
+                menu.style.left = Math.min(rect.left, window.innerWidth - 240) + 'px';
+                if (spaceBelow < menuHeight && rect.top > menuHeight) {
+                    menu.style.top = (rect.top - menuHeight - 4) + 'px';
+                } else {
+                    menu.style.top = (rect.bottom + 4) + 'px';
+                }
+            }
+        }
+        return;
+    }
+    if (!e.target.closest('.dropdown-menu')) {
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    }
+});
+
+document.getElementById('themeToggle').addEventListener('click', function() {
+    const html = document.documentElement;
+    const isDark = html.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    const thumb = document.getElementById('toggleThumb');
+    const icon = document.getElementById('toggleIcon');
+    const label = document.getElementById('toggleLabel');
+    thumb.style.transform = isDark ? 'translateX(20px)' : 'translateX(0)';
+    thumb.style.background = isDark ? '#334155' : '#fbbf24';
+    icon.className = isDark ? 'bi bi-moon-fill text-[10px] text-zinc-300' : 'bi bi-sun-fill text-[10px] text-zinc-900';
+    label.textContent = isDark ? 'Тёмная тема' : 'Светлая тема';
+});
+
+// sidebar hamburger
+document.getElementById('hamburgerBtn').addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+    const icon = this.querySelector('i');
+    icon.className = icon.classList.contains('bi-list') ? 'bi bi-x-lg text-lg' : 'bi bi-list text-lg';
+});
+document.getElementById('sidebarOverlay').addEventListener('click', function() {
+    this.classList.remove('open');
+    document.getElementById('sidebar').classList.remove('open');
+    document.querySelector('#hamburgerBtn i').className = 'bi bi-list text-lg';
+});
+
+// init toggle state on load
+(function() {
+    const isDark = document.documentElement.classList.contains('dark');
+    if (isDark) {
+        const thumb = document.getElementById('toggleThumb');
+        const icon = document.getElementById('toggleIcon');
+        const label = document.getElementById('toggleLabel');
+        thumb.style.transform = 'translateX(20px)';
+        thumb.style.background = '#334155';
+        icon.className = 'bi bi-moon-fill text-[10px] text-zinc-300';
+        label.textContent = 'Тёмная тема';
+    }
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Отчёт — Калькулятор угроз{% endblock %}
+
+{% block content %}
+<style>
+.report-table { width: 100%; table-layout: fixed; font-size: 0.75rem; }
+.report-table th, .report-table td { padding: 4px 6px; }
+.report-table td:nth-child(3) { word-break: break-word; }
+.report-table th:nth-child(1) { width: 4%; }
+.report-table th:nth-child(2) { width: 5%; }
+.report-table th:nth-child(3) { width: 28%; }
+.report-table th:nth-child(4) { width: 16%; }
+.report-table th:nth-child(5),
+.report-table th:nth-child(6),
+.report-table th:nth-child(7) { width: 4%; text-align: center; }
+.report-table td:nth-child(5),
+.report-table td:nth-child(6),
+.report-table td:nth-child(7) { text-align: center; }
+.report-table th:nth-child(8) { width: 18%; }
+.report-table th:nth-child(9) { width: 17%; }
+@media print { .pdf-break { page-break-before: always; } }
+</style>
+<div class="flex items-center justify-between mb-6 no-print">
+    <h1 class="page-title">Отчёт по модели угроз</h1>
+    <div class="flex items-center gap-2">
+        <a class="btn-shadcn btn-shadcn-sm" href="/report/pdf">
+            <i class="bi bi-file-earmark-pdf"></i> Экспорт PDF
+        </a>
+        <button class="btn-shadcn btn-shadcn-sm" onclick="window.print()">
+            <i class="bi bi-printer"></i> Печать
+        </button>
+    </div>
+</div>
+
+<div class="card-shadcn p-5 mb-6">
+    <div>
+        <h5 class="font-semibold text-base">Модель угроз инфраструктуры умного дома</h5>
+        <p class="text-sm text-zinc-500 mt-1">Сформирован: {{ generated_at }}</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="card-shadcn p-5">
+        <h5 class="font-semibold text-sm mb-3 flex items-center gap-2">
+            <i class="bi bi-hdd-stack"></i> Активы ({{ assets|length }})
+        </h5>
+        {% if assets %}
+        <div class="overflow-x-auto">
+            <table class="table-shadcn text-sm">
+                <thead>
+                    <tr><th>Название</th><th>Тип</th><th>Протоколы</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in assets %}
+                    <tr>
+                        <td>{{ a.name }}</td>
+                        <td>{{ get_type_name(a.type) }}</td>
+                        <td class="text-zinc-500">{{ a.protocols.replace(',', ', ') if a.protocols else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-sm text-zinc-400">Нет активов</p>
+        {% endif %}
+    </div>
+
+    <div class="card-shadcn p-5">
+        <h5 class="font-semibold text-sm mb-3 flex items-center gap-2">
+            <i class="bi bi-shield-exclamation"></i> Распределение рисков
+        </h5>
+        {% set colors = {"низкий": "#22c55e", "средний": "#eab308", "высокий": "#f97316", "критический": "#ef4444"} %}
+        {% for level, info in by_level.items() %}
+        <div class="mb-3">
+            <div class="flex justify-between text-xs mb-1">
+                <span class="font-medium">{{ level|capitalize }}</span>
+                <span class="text-zinc-500">{{ info.count }}</span>
+            </div>
+            <div class="h-2.5 bg-zinc-100 rounded-full overflow-hidden">
+                {% set pct = (info.count / threats|length * 100) if threats|length > 0 else 0 %}
+                <div class="h-full rounded-full" style="width:{{ pct }}%;background:{{ colors[level] }};"></div>
+            </div>
+        </div>
+        {% endfor %}
+        <hr class="my-3 border-zinc-200">
+        <div class="flex justify-between text-sm">
+            <span><strong>Всего угроз:</strong> {{ threats|length }}</span>
+            <span><strong>Устранено:</strong> {{ threats|selectattr('mitigated')|list|length }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="pdf-break"></div>
+<div class="card-shadcn p-5">
+    <h5 class="font-semibold text-sm mb-3 flex items-center gap-2">
+        <i class="bi bi-list-check"></i> Реестр угроз
+    </h5>
+    {% if threats %}
+    <div class="overflow-x-auto">
+        <table class="table-shadcn report-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>STRIDE</th>
+                    <th>Угроза</th>
+                    <th class="pl-8">Актив</th>
+                    <th class="text-center">P</th>
+                    <th class="text-center">I</th>
+                    <th class="text-center">R</th>
+                    <th>Уровень</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in threats %}
+                <tr>
+                    <td class="text-xs text-zinc-400">{{ t.id }}</td>
+                    <td>
+                        <span class="badge-stride" style="background:{{ STRIDE_COLORS[t.stride] }};">{{ t.stride }}</span>
+                    </td>
+                    <td>
+                        <div class="text-sm font-medium">{{ t.name }}</div>
+                        {% if t.description %}
+                        <div class="text-xs text-zinc-400">{{ t.description }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="text-sm text-zinc-500 pl-8">{{ t.asset_name or '—' }}</td>
+                    <td class="text-center text-sm">{{ t.probability }}</td>
+                    <td class="text-center text-sm">{{ t.impact }}</td>
+                    <td class="text-center"><strong class="text-sm">{{ t.risk_score }}</strong></td>
+                    <td>
+                        {% set level_classes = {"низкий": "bg-emerald-50 text-emerald-700 border-emerald-200", "средний": "bg-amber-50 text-amber-700 border-amber-200", "высокий": "bg-orange-50 text-orange-700 border-orange-200", "критический": "bg-red-50 text-red-700 border-red-200"} %}
+                        <span class="badge-shadcn {{ level_classes.get(t.risk_level, '') }}">
+                            {{ t.risk_level }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if t.mitigated %}
+                        <span class="badge-shadcn border-emerald-200 bg-emerald-50 text-emerald-700">Устранено</span>
+                        {% else %}
+                        <span class="badge-shadcn border-amber-200 bg-amber-50 text-amber-700">Активно</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-6">
+        <h6 class="font-semibold text-sm mb-2">Общие рекомендации</h6>
+        <ul class="space-y-1 text-sm text-zinc-600">
+            <li class="flex items-start gap-2"><i class="bi bi-check2 text-emerald-500 mt-1"></i> Регулярно обновлять прошивки и ПО всех устройств умного дома</li>
+            <li class="flex items-start gap-2"><i class="bi bi-check2 text-emerald-500 mt-1"></i> Использовать сегментацию сети (гостевая / основная / IoT VLAN)</li>
+            <li class="flex items-start gap-2"><i class="bi bi-check2 text-emerald-500 mt-1"></i> Отключить UPnP и ненужные сетевые сервисы на роутере</li>
+            <li class="flex items-start gap-2"><i class="bi bi-check2 text-emerald-500 mt-1"></i> Настроить сложные уникальные пароли для каждого устройства</li>
+            <li class="flex items-start gap-2"><i class="bi bi-check2 text-emerald-500 mt-1"></i> Включить журналирование событий и регулярно просматривать логи</li>
+            <li class="flex items-start gap-2"><i class="bi bi-check2 text-emerald-500 mt-1"></i> Использовать WPA3 для Wi-Fi, AES-шифрование для ZigBee</li>
+            <li class="flex items-start gap-2"><i class="bi bi-check2 text-emerald-500 mt-1"></i> Включить двухфакторную аутентификацию для облачных сервисов</li>
+        </ul>
+    </div>
+    {% else %}
+{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

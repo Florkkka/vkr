@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Угрозы — Калькулятор угроз{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="page-title">Угрозы</h1>
+    <div class="flex items-center gap-2 no-print">
+        <a href="/threats/new" class="btn-shadcn btn-shadcn-primary btn-shadcn-sm">
+            <i class="bi bi-plus-lg"></i> Добавить угрозу
+        </a>
+    </div>
+</div>
+
+{% set ns = namespace(stride=request.query_params.get('stride',''), level=request.query_params.get('level',''), mitigated=request.query_params.get('mitigated','')) %}
+
+<div class="card-shadcn p-4 mb-6 no-print">
+    <form class="flex items-end gap-3 flex-wrap" method="get" action="/threats">
+        <div>
+            <label class="label-shadcn">STRIDE</label>
+            <select name="stride" class="input-shadcn" style="width:auto;min-width:140px;">
+                <option value="">Все</option>
+                {% for s in stride_list %}
+                <option value="{{ s.value }}" {% if ns.stride == s.value %}selected{% endif %}>{{ s.value }} — {{ s.full_name.split('(')[0].strip() }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="label-shadcn">Уровень риска</label>
+            <select name="level" class="input-shadcn" style="width:auto;min-width:140px;">
+                <option value="">Все</option>
+                <option value="низкий" {% if ns.level == 'низкий' %}selected{% endif %}>Низкий</option>
+                <option value="средний" {% if ns.level == 'средний' %}selected{% endif %}>Средний</option>
+                <option value="высокий" {% if ns.level == 'высокий' %}selected{% endif %}>Высокий</option>
+                <option value="критический" {% if ns.level == 'критический' %}selected{% endif %}>Критический</option>
+            </select>
+        </div>
+        <div>
+            <label class="label-shadcn">Статус</label>
+            <select name="mitigated" class="input-shadcn" style="width:auto;min-width:140px;">
+                <option value="">Все</option>
+                <option value="no" {% if ns.mitigated == 'no' %}selected{% endif %}>Не устранено</option>
+                <option value="yes" {% if ns.mitigated == 'yes' %}selected{% endif %}>Устранено</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="submit" class="btn-shadcn btn-shadcn-sm">
+                <i class="bi bi-funnel"></i> Применить
+            </button>
+            <a href="/threats" class="btn-shadcn btn-shadcn-sm btn-shadcn-ghost">Сброс</a>
+        </div>
+    </form>
+</div>
+
+{% if threats %}
+<div class="card-shadcn overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="table-shadcn">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>STRIDE</th>
+                    <th>Название</th>
+                    <th>Актив</th>
+                    <th class="text-center">P</th>
+                    <th class="text-center">I</th>
+                    <th class="text-center">R</th>
+                    <th>Статус</th>
+                    <th class="no-print"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in threats %}
+                <tr class="{% if t.mitigated %}mitigated{% endif %}">
+                    <td class="text-xs text-zinc-400">#{{ t.id }}</td>
+                    <td>
+                        <span class="badge-stride" style="background:{{ STRIDE_COLORS[t.stride] }};">{{ t.stride }}</span>
+                    </td>
+                    <td>
+                        <div class="font-medium text-sm">{{ t.name }}</div>
+                        {% if t.description %}
+                        <div class="text-xs text-zinc-400 max-w-xs truncate">{{ t.description[:120] }}{% if t.description|length > 120 %}...{% endif %}</div>
+                        {% endif %}
+                    </td>
+                    <td class="text-sm text-zinc-500">{{ t.asset_name or '—' }}</td>
+                    <td class="text-center"><span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-zinc-100 text-xs font-semibold">{{ t.probability }}</span></td>
+                    <td class="text-center"><span class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-zinc-100 text-xs font-semibold">{{ t.impact }}</span></td>
+                    <td class="text-center">
+                        {% set level_colors = {"низкий": "#22c55e", "средний": "#eab308", "высокий": "#f97316", "критический": "#ef4444"} %}
+                        <span class="inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-bold" style="background:{{ level_colors[t.risk_level] }}15;color:{{ level_colors[t.risk_level] }};">{{ t.risk_score }}</span>
+                    </td>
+                    <td>
+                        {% if t.mitigated %}
+                        <span class="badge-shadcn border-emerald-200 bg-emerald-50 text-emerald-700">Устранено</span>
+                        {% else %}
+                        <span class="badge-shadcn border-amber-200 bg-amber-50 text-amber-700">Активно</span>
+                        {% endif %}
+                    </td>
+                    <td class="no-print">
+                        <div class="relative">
+                            <button data-dropdown-toggle class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 text-zinc-500">
+                                <i class="bi bi-gear text-sm"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <form method="post" action="/threats/{{ t.id }}/toggle">
+                                    <button class="dropdown-item">
+                                        {% if t.mitigated %}
+                                        <i class="bi bi-arrow-counterclockwise"></i> Отметить как активное
+                                        {% else %}
+                                        <i class="bi bi-check-circle"></i> Отметить устранённым
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <a class="dropdown-item" href="/threats/{{ t.id }}/edit">
+                                    <i class="bi bi-pencil"></i> Редактировать
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <form method="post" action="/threats/{{ t.id }}/delete" onsubmit="return confirm('Удалить угрозу?')">
+                                    <button class="dropdown-item text-danger">
+                                        <i class="bi bi-trash"></i> Удалить
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card-shadcn empty-state">
+    <i class="bi bi-exclamation-triangle text-4xl text-zinc-300 mb-3"></i>
+    <h5 class="text-base font-semibold text-zinc-500 mb-1">Нет угроз</h5>
+    <p class="text-sm text-zinc-400 mb-4">Добавьте первую угрозу вручную</p>
+    <div class="flex items-center gap-2">
+        <a href="/threats/new" class="btn-shadcn btn-shadcn-primary btn-shadcn-sm">Добавить угрозу</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
